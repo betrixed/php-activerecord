@@ -4,6 +4,9 @@
  */
 namespace ActiveRecord;
 
+// Multiple functions and classes in each file
+require_once 'Utils.php';
+require_once 'Exceptions.php';
 /**
  * The base class for your models.
  *
@@ -418,7 +421,7 @@ class Model
 			$name = "set_$name";
 			return $this->$name($value);
 		}
-
+                
 		if (array_key_exists($name,$this->attributes))
 			return $this->assign_attribute($name,$value);
 
@@ -523,21 +526,22 @@ class Model
 
 		//do not remove - have to return null by reference in strict mode
 		$null = null;
-
-		foreach (static::$delegate as &$item)
-		{
-			if (($delegated_name = $this->is_delegated($name,$item)))
-			{
-				$to = $item['to'];
-				if ($this->$to)
-				{
-					$val =& $this->$to->__get($delegated_name);
-					return $val;
-				}
-				else
-					return $null;
-			}
-		}
+                if (is_array(static::$delegate)) {
+                    foreach (static::$delegate as &$item)
+                    {
+                            if (($delegated_name = $this->is_delegated($name,$item)))
+                            {
+                                    $to = $item['to'];
+                                    if ($this->$to)
+                                    {
+                                            $val =& $this->$to->__get($delegated_name);
+                                            return $val;
+                                    }
+                                    else
+                                            return $null;
+                            }
+                    }
+                }
 
 		throw new UndefinedPropertyException(get_called_class(),$name);
 	}
@@ -682,10 +686,13 @@ class Model
 	 */
 	private function is_delegated($name, &$delegate)
 	{
-		if ($delegate['prefix'] != '')
+                if (!is_array($delegate)) {
+                    return null;
+                }
+		if ($delegate['prefix'] != '') {
 			$name = substr($name,strlen($delegate['prefix'])+1);
-
-		if (is_array($delegate) && in_array($name,$delegate['delegate']))
+                }
+		if (in_array($name,$delegate['delegate']))
 			return $name;
 
 		return null;
@@ -773,11 +780,13 @@ class Model
 	 * @param boolean $guard_attributes Set to true to guard protected/non-accessible attributes
 	 * @return Model
 	 */
-	public static function create($attributes, $validate=true, $guard_attributes=true)
+	public static function createInserted($attributes, $validate=true, $guard_attributes=true)
 	{
 		$class_name = get_called_class();
 		$model = new $class_name($attributes, $guard_attributes);
+                // may throw DatabaseException
 		$model->save($validate);
+
 		return $model;
 	}
 
@@ -796,7 +805,7 @@ class Model
 	public function save($validate=true)
 	{
 		$this->verify_not_readonly('save');
-		return $this->is_new_record() ? $this->insert($validate) : $this->update($validate);
+		return $this->is_new_record() ? $this->p_insert($validate) : $this->p_update($validate);
 	}
 
 	/**
@@ -806,7 +815,7 @@ class Model
 	 * @param boolean $validate Set to true or false depending on if you want the validators to run or not
 	 * @return boolean True if the model was saved to the database otherwise false
 	 */
-	private function insert($validate=true)
+	private function p_insert($validate=true)
 	{
 		$this->verify_not_readonly('insert');
 
@@ -866,7 +875,7 @@ class Model
 	 * @param boolean $validate Set to true or false depending on if you want the validators to run or not
 	 * @return boolean True if the model was saved to the database otherwise false
 	 */
-	private function update($validate=true)
+	private function p_update($validate=true) : bool
 	{
 		$this->verify_not_readonly('update');
 
@@ -1168,10 +1177,10 @@ class Model
 	 * @param mixed $value Value of the attribute
 	 * @return boolean True if successful otherwise false
 	 */
-	public function update_attribute($name, $value)
+	public function update_attribute($name, $value) : bool
 	{
 		$this->__set($name, $value);
-		return $this->update(false);
+		return $this->p_update(false);
 	}
 
 	/**
@@ -1305,13 +1314,38 @@ class Model
 	{
 		$this->__dirty = null;
 	}
-
+        /**
+         * Adapted from https://www.codegrepper.com/code-examples/php/php+camelcase+to+snake+case
+         * Seperate, flatten and implode algorithm
+         */
+        /*
+        static function  camel2snake($input, $delimiter='_') {
+            $pattern = '!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!';
+            $matches = null;
+            preg_match_all($pattern, $input, $matches);
+            $ret = $matches[0];
+            foreach ($ret as &$match) {
+                $match = strtolower($match);
+            }
+            return implode($delimiter, $ret);
+        } */
+        static function  camel2snake($text, $delimiter='_') {
+        return mb_strtolower(
+            preg_replace(
+                '/[A-Z]/',
+                $delimiter . '\\0',
+                lcfirst($text)
+            )
+        );
+        }
 	/**
 	 * A list of valid finder options.
 	 *
 	 * @var array
 	 */
-	static $VALID_OPTIONS = array('conditions', 'limit', 'offset', 'order', 'select', 'joins', 'include', 'readonly', 'group', 'from', 'having');
+	static $VALID_OPTIONS = array('conditions', 'limit', 
+            'offset', 'order', 'select', 'joins', 'include', 
+            'readonly', 'group', 'from', 'having', 'bind', 'bindTypes');
 
 	/**
 	 * Enables the use of dynamic finders.
@@ -1336,7 +1370,7 @@ class Model
 	 *
 	 * # would be the equivalent of
 	 * if (!Person::find_by_name('Tito'))
-	 *   Person::create(array('Tito'));
+	 *   Person::createInserted(array('Tito'));
 	 * </code>
 	 *
 	 * Some other examples of find_or_create_by:
@@ -1357,6 +1391,15 @@ class Model
 		$options = static::extract_and_validate_options($args);
 		$create = false;
 
+                if (str_starts_with($method, "findFirstBy")) {
+                    $attributes = self::camel2snake(substr($method,11));
+                    $options['conditions'] = SQLBuilder::create_conditions_from_underscored_string(static::connection(),$attributes,$args,static::$alias_attribute);
+                    if (!($ret = static::find('first',$options))) {
+                            return null;
+                    }
+                    return $ret;
+                }
+
 		if (substr($method,0,17) == 'find_or_create_by')
 		{
 			$attributes = substr($method,17);
@@ -1375,7 +1418,7 @@ class Model
 			$options['conditions'] = SQLBuilder::create_conditions_from_underscored_string(static::connection(),$attributes,$args,static::$alias_attribute);
 
 			if (!($ret = static::find('first',$options)) && $create)
-				return static::create(SQLBuilder::create_hash_from_underscored_string($attributes,$args,static::$alias_attribute));
+				return static::createInserted(SQLBuilder::create_hash_from_underscored_string($attributes,$args,static::$alias_attribute));
 
 			return $ret;
 		}
@@ -1392,7 +1435,13 @@ class Model
 
 		throw new ActiveRecordException("Call to undefined method: $method");
 	}
-
+        
+        public function update() : bool {
+            return $this->save();
+        }
+        public function create() : bool {
+            return $this->save();
+        }
 	/**
 	 * Enables the use of build|create for associations.
 	 *
@@ -1402,27 +1451,27 @@ class Model
 	 */
 	public function __call($method, $args)
 	{
-		//check for build|create_association methods
-		if (preg_match('/(build|create)_/', $method))
-		{
-			if (!empty($args))
-				$args = $args[0];
+            if (preg_match('/(build|create)_/', $method))
+            {
+                if (!empty($args)) {
+                        $args = $args[0];
+                }
+                $association_name = str_replace(['build_', 'create_'], '', $method);
+                $method = str_replace($association_name, 'association', $method);
+                $table = static::table();
 
-			$association_name = str_replace(array('build_', 'create_'), '', $method);
-			$method = str_replace($association_name, 'association', $method);
-			$table = static::table();
+                if (($association = $table->get_relationship($association_name)) ||
+                          ($association = $table->get_relationship(($association_name = Utils::pluralize($association_name)))))
+                {
+                        // access association to ensure that the relationship has been loaded
+                        // so that we do not double-up on records if we append a newly created
+                        $this->$association_name;
+                        return $association->$method($this, $args);
+                }
 
-			if (($association = $table->get_relationship($association_name)) ||
-				  ($association = $table->get_relationship(($association_name = Utils::pluralize($association_name)))))
-			{
-				// access association to ensure that the relationship has been loaded
-				// so that we do not double-up on records if we append a newly created
-				$this->$association_name;
-				return $association->$method($this, $args);
-			}
-		}
-
-		throw new ActiveRecordException("Call to undefined method: $method");
+                 
+            }
+            throw new ActiveRecordException("Call to undefined method: $method"); 	
 	}
 
 	/**
@@ -1483,6 +1532,15 @@ class Model
 		return call_user_func_array('static::count',func_get_args()) > 0 ? true : false;
 	}
 
+        // find record with a where clause
+        public static function findFirst(/* ... */) {
+            $args = func_get_args();
+            $arg0 = $args[0] ?? null;
+            if (is_string($arg0) && (count($args) === 1)) {
+                $args = [['conditions' => $arg0]];
+            }
+            return call_user_func_array('static::find',array_merge(['first'], $args));
+        }
 	/**
 	 * Alias for self::find('first').
 	 *
@@ -1563,14 +1621,19 @@ class Model
 	{
 		$class = get_called_class();
 
-		if (func_num_args() <= 0)
-			throw new RecordNotFound("Couldn't find $class without an ID");
+		/*if (func_num_args() <= 0)
+			throw new RecordNotFound("Couldn't find $class without an ID"); */
 
 		$args = func_get_args();
+                $num_args = count($args);
+                
+                if ($num_args === 0) {
+                    $args[] = 'all';
+                }
 		$options = static::extract_and_validate_options($args);
-		$num_args = count($args);
+		
 		$single = true;
-
+                $num_args = count($args);
 		if ($num_args > 0 && ($args[0] === 'all' || $args[0] === 'first' || $args[0] === 'last'))
 		{
 			switch ($args[0])
@@ -1640,7 +1703,7 @@ class Model
 
 	/**
 	 * Finder method which will find by a single or array of primary keys for this model.
-	 *
+	 * Don't throw exceptions if not found.
 	 * @see find
 	 * @param array $values An array containing values for the pk
 	 * @param array $options An options array
@@ -1666,21 +1729,16 @@ class Model
 			$list = $table->find($options);
 		}
 		$results = count($list);
+                // muliple records by single value PK??
 
-		if ($results != ($expected = count($values)))
-		{
-			$class = get_called_class();
-			if (is_array($values))
-				$values = join(',',$values);
-
-			if ($expected == 1)
-			{
-				throw new RecordNotFound("Couldn't find $class with ID=$values");
-			}
-
-			throw new RecordNotFound("Couldn't find all $class with IDs ($values) (found $results, but was looking for $expected)");
-		}
-		return $expected == 1 ? $list[0] : $list;
+                $expected = is_array($values) ? count($values) : 1;
+                if ($expected === 1) {
+                    if (empty($list)) {
+                        return null;
+                    }
+                    return $list[0];
+                }
+                return $list;
 	}
 
 	/**
@@ -1890,7 +1948,7 @@ class Model
 	 * <code>
 	 * YourModel::transaction(function()
 	 * {
-	 *   YourModel::create(array("name" => "blah"));
+	 *   YourModel::createInserted(array("name" => "blah"));
 	 * });
 	 * </code>
 	 *
@@ -1901,13 +1959,13 @@ class Model
 	 * <code>
 	 * YourModel::transaction(function()
 	 * {
-	 *   YourModel::create(array("name" => "blah"));
+	 *   YourModel::createInserted(array("name" => "blah"));
 	 *   throw new Exception("rollback!");
 	 * });
 	 *
 	 * YourModel::transaction(function()
 	 * {
-	 *   YourModel::create(array("name" => "blah"));
+	 *   YourModel::createInserted(array("name" => "blah"));
 	 *   return false; # rollback!
 	 * });
 	 * </code>

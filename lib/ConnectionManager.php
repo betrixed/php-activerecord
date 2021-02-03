@@ -24,13 +24,15 @@ class ConnectionManager extends Singleton
 	 * @param string $name Optional name of a connection
 	 * @return Connection
 	 */
-	public static function get_connection($name=null)
+	public static function get_connection($name=null) : ?Connection
 	{
 		$config = Config::instance();
-		$name = $name ? $name : $config->get_default_connection();
+                if ($name === null) {
+                    $name = $config->get_default_name();
+                }
 
 		if (!isset(self::$connections[$name]) || !self::$connections[$name]->connection)
-			self::$connections[$name] = Connection::instance($config->get_connection($name));
+			self::$connections[$name] = Connection::instance($name);
 
 		return self::$connections[$name];
 	}
@@ -46,7 +48,7 @@ class ConnectionManager extends Singleton
 	public static function drop_connection($name=null)
 	{
 		$config = Config::instance();
-		$name = $name ? $name : $config->get_default_connection();
+		$name = $name ? $name : $config->get_default_name();
 
 		if (isset(self::$connections[$name]))
 			unset(self::$connections[$name]);

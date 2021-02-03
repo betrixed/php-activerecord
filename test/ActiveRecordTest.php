@@ -17,10 +17,9 @@ class ActiveRecordTest extends DatabaseTest
 		$this->assert_false(Author::is_options_hash(array(1,2,3)));
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ActiveRecordException
-	 */
+
 	public function test_options_hash_with_unknown_keys() {
+                $this->expectException('ActiveRecord\ActiveRecordException');
 		$this->assert_false(Author::is_options_hash(array('conditions' => 'blah', 'sharks' => 'laserz', 'dubya' => 'bush')));
 	}
 
@@ -57,11 +56,9 @@ class ActiveRecordTest extends DatabaseTest
 		$this->assert_equals(array(),Author::extract_and_validate_options($args));
 	}
 
-	/**
-	 * @expectedException ActiveRecord\UndefinedPropertyException
-	 */
 	public function test_invalid_attribute()
 	{
+                $this->expectException('ActiveRecord\UndefinedPropertyException');
 		$author = Author::find('first',array('conditions' => 'author_id=1'));
 		$author->some_invalid_field_name;
 	}
@@ -333,7 +330,7 @@ class ActiveRecordTest extends DatabaseTest
 	public function test_transaction_committed()
 	{
 		$original = Author::count();
-		$ret = Author::transaction(function() { Author::create(array("name" => "blah")); });
+		$ret = Author::transaction(function() { Author::createInserted(array("name" => "blah")); });
 		$this->assert_equals($original+1,Author::count());
 		$this->assert_true($ret);
 	}
@@ -341,7 +338,7 @@ class ActiveRecordTest extends DatabaseTest
 	public function test_transaction_committed_when_returning_true()
 	{
 		$original = Author::count();
-		$ret = Author::transaction(function() { Author::create(array("name" => "blah")); return true; });
+		$ret = Author::transaction(function() { Author::createInserted(array("name" => "blah")); return true; });
 		$this->assert_equals($original+1,Author::count());
 		$this->assert_true($ret);
 	}
@@ -352,7 +349,7 @@ class ActiveRecordTest extends DatabaseTest
 		
 		$ret = Author::transaction(function()
 		{
-			Author::create(array("name" => "blah"));
+			Author::createInserted(array("name" => "blah"));
 			return false;
 		});
 		
@@ -369,7 +366,7 @@ class ActiveRecordTest extends DatabaseTest
 		{
 			Author::transaction(function()
 			{
-				Author::create(array("name" => "blah"));
+				Author::createInserted(array("name" => "blah"));
 				throw new Exception("blah");
 			});
 		}
@@ -482,11 +479,9 @@ class ActiveRecordTest extends DatabaseTest
 		$this->assert_equals('authors',Author::table_name());
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ActiveRecordException
-	 */
 	public function test_undefined_instance_method()
 	{
+                $this->expectException('ActiveRecord\ActiveRecordException');
 		Author::first()->find_by_name('sdf');
 	}
 

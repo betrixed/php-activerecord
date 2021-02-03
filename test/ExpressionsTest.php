@@ -52,11 +52,9 @@ class ExpressionsTest extends SnakeCase_PHPUnit_Framework_TestCase
 		$this->assert_equals('name=? and book=?',$c->to_s(false,$x));
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ExpressionsException
-	 */
 	public function test_insufficient_variables()
 	{
+            $this->expectException('ActiveRecord\ExpressionsException');
 		$c = new Expressions(null,'name=? and id=?','Tito');
 		$c->to_s();
 	}
@@ -169,6 +167,7 @@ class ExpressionsTest extends SnakeCase_PHPUnit_Framework_TestCase
 	 */
 	public function test_bind_invalid_parameter_number()
 	{
+            $this->expectException('ActiveRecord\ExpressionsException');
 		$a = new Expressions(null,'name=?');
 		$a->bind(0,99);
 	}
@@ -202,7 +201,6 @@ class ExpressionsTest extends SnakeCase_PHPUnit_Framework_TestCase
 	public function test_hash_with_array()
 	{
 		$a = new Expressions(null,array('id' => 1, 'name' => array('Tito','Mexican')));
-		$this->assert_equals('id=? AND name IN(?,?)',$a->to_s());
+		$this->assert_equals('id=? AND name IN (?,?)',$a->to_s());
 	}
 }
-?>

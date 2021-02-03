@@ -41,6 +41,7 @@ class ActiveRecordWriteTest extends DatabaseTest
 	{
 		$venue = new Venue(array('name' => 'Tito'));
 		$venue->save();
+                $this->assert_not_null(Venue::findFirstByName('Tito'));
 	}
 
 	public function test_insert()
@@ -55,10 +56,11 @@ class ActiveRecordWriteTest extends DatabaseTest
 	 */
 	public function test_insert_with_no_sequence_defined()
 	{
+            $this->expectException('ActiveRecord\DatabaseException');
 		if (!$this->conn->supports_sequences())
 			throw new ActiveRecord\DatabaseException('');
 
-		AuthorWithoutSequence::create(array('name' => 'Bob!'));
+		AuthorWithoutSequence::createInserted(array('name' => 'Bob!'));
 	}
 
 	public function test_insert_should_quote_keys()
@@ -140,11 +142,9 @@ class ActiveRecordWriteTest extends DatabaseTest
 		$this->assert_same($new_name, $book->name, Book::find(1)->name);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\UndefinedPropertyException
-	 */
 	public function test_update_attributes_undefined_property()
 	{
+                $this->expectException('ActiveRecord\UndefinedPropertyException');
 		$book = Book::find(1);
 		$book->update_attributes(array('name' => 'new name', 'invalid_attribute' => true , 'another_invalid_attribute' => 'blah'));
 	}
@@ -159,11 +159,10 @@ class ActiveRecordWriteTest extends DatabaseTest
 		$this->assert_same($new_name, $book->name, Book::find(1)->name);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\UndefinedPropertyException
-	 */
+
 	public function test_update_attribute_undefined_property()
 	{
+            $this->expectException('ActiveRecord\UndefinedPropertyException');
 		$book = Book::find(1);
 		$book->update_attribute('invalid_attribute', true);
 	}
@@ -268,13 +267,13 @@ class ActiveRecordWriteTest extends DatabaseTest
 
 	public function test_create()
 	{
-		$author = Author::create(array('name' => 'Blah Blah'));
+		$author = Author::createInserted(array('name' => 'Blah Blah'));
 		$this->assert_not_null(Author::find($author->id));
 	}
 
 	public function test_create_should_set_created_at()
 	{
-		$author = Author::create(array('name' => 'Blah Blah'));
+		$author = Author::createInserted(array('name' => 'Blah Blah'));
 		$this->assert_not_null($author->created_at);
 	}
 
@@ -283,6 +282,7 @@ class ActiveRecordWriteTest extends DatabaseTest
 	 */
 	public function test_update_with_no_primary_key_defined()
 	{
+            $this->expectException('ActiveRecord\ActiveRecordException');
 		Author::table()->pk = array();
 		$author = Author::first();
 		$author->name = 'blahhhhhhhhhh';
@@ -294,6 +294,7 @@ class ActiveRecordWriteTest extends DatabaseTest
 	 */
 	public function test_delete_with_no_primary_key_defined()
 	{
+            $this->expectException('ActiveRecord\ActiveRecordException');
 		Author::table()->pk = array();
 		$author = author::first();
 		$author->delete();
@@ -301,15 +302,13 @@ class ActiveRecordWriteTest extends DatabaseTest
 
 	public function test_inserting_with_explicit_pk()
 	{
-		$author = Author::create(array('author_id' => 9999, 'name' => 'blah'));
+		$author = Author::createInserted(array('author_id' => 9999, 'name' => 'blah'));
 		$this->assert_equals(9999,$author->author_id);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ReadOnlyException
-	 */
 	public function test_readonly()
 	{
+                $this->expectException('ActiveRecord\ReadOnlyException');
 		$author = Author::first(array('readonly' => true));
 		$author->save();
 	}
@@ -333,7 +332,7 @@ class ActiveRecordWriteTest extends DatabaseTest
 
 	public function test_set_date_flags_dirty()
 	{
-		$author = Author::create(array('some_date' => new DateTime()));
+		$author = Author::createInserted(array('some_date' => new DateTime()));
 		$author = Author::find($author->id);
 		$author->some_date->setDate(2010,1,1);
 		$this->assert_has_keys('some_date', $author->dirty_attributes());
@@ -341,7 +340,7 @@ class ActiveRecordWriteTest extends DatabaseTest
 
 	public function test_set_date_flags_dirty_with_php_datetime()
 	{
-		$author = Author::create(array('some_date' => new \DateTime()));
+		$author = Author::createInserted(array('some_date' => new \DateTime()));
 		$author = Author::find($author->id);
 		$author->some_date->setDate(2010,1,1);
 		$this->assert_has_keys('some_date', $author->dirty_attributes());
@@ -427,7 +426,7 @@ class ActiveRecordWriteTest extends DatabaseTest
 
 	public function test_update_native_datetime()
 	{
-		$author = Author::create(array('name' => 'Blah Blah'));
+		$author = Author::createInserted(array('name' => 'Blah Blah'));
 		$native_datetime = new \DateTime('1983-12-05');
 		$author->some_date = $native_datetime;
 		$this->assert_false($native_datetime === $author->some_date);
@@ -435,10 +434,10 @@ class ActiveRecordWriteTest extends DatabaseTest
 
 	public function test_update_our_datetime()
 	{
-		$author = Author::create(array('name' => 'Blah Blah'));
+		$author = Author::createInserted(array('name' => 'Blah Blah'));
 		$our_datetime = new DateTime('1983-12-05');
 		$author->some_date = $our_datetime;
 		$this->assert_true($our_datetime === $author->some_date);
 	}
 
-};
+}

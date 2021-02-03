@@ -235,7 +235,7 @@ abstract class AbstractRelationship implements InterfaceRelationship
 	public function create_association(Model $model, $attributes=array(), $guard_attributes=true)
 	{
 		$class_name = $this->class_name;
-		$new_record = $class_name::create($attributes, true, $guard_attributes);
+		$new_record = $class_name::createInserted($attributes, true, $guard_attributes);
 		return $this->append_record_to_associate($model, $new_record);
 	}
 

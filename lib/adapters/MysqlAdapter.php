@@ -9,6 +9,8 @@ namespace ActiveRecord;
  *
  * @package ActiveRecord
  */
+use stdClass;
+
 class MysqlAdapter extends Connection
 {
 	static $DEFAULT_PORT = 3306;
@@ -20,14 +22,15 @@ class MysqlAdapter extends Connection
 		return "$sql LIMIT {$offset}$limit";
 	}
 
-	public function query_column_info($table)
+
+	public function query_column_info($table) : array
 	{
-		return $this->query("SHOW COLUMNS FROM $table");
+		return $this->fetchAllRows($this->query("SHOW COLUMNS FROM $table"));
 	}
 
-	public function query_for_tables()
+	public function query_for_tables()  : array
 	{
-		return $this->query('SHOW TABLES');
+		return $this->fetchAllRows($this->query('SHOW TABLES'), \PDO::FETCH_COLUMN);
 	}
 
 	public function create_column(&$column)
@@ -94,6 +97,10 @@ class MysqlAdapter extends Connection
 			'boolean' => array('name' => 'tinyint', 'length' => 1)
 		);
 	}
-
+        
+        public function after_connect() {
+            $this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+            $this->connection->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+        }
 }
-?>

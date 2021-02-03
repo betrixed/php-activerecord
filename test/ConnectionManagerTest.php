@@ -24,7 +24,7 @@ class ConnectionManagerTest extends DatabaseTest
 
 	public function test_get_connection_with_default()
 	{
-		$default = ActiveRecord\Config::instance()->get_default_connection('mysql');
+		$default = ActiveRecord\Config::instance()->get_default_name();
 		$connection = ConnectionManager::get_connection();
 		$this->assert_same(ConnectionManager::get_connection($default), $connection);
 	}

@@ -26,8 +26,9 @@ class ModelCallbackTest extends DatabaseTest
 
 	public function assert_fires($callbacks, $closure)
 	{
+                $expect = is_array($callbacks) ? count($callbacks) : 1;
 		$executed = $this->register_and_invoke_callbacks($callbacks,true,$closure);
-		$this->assert_equals(count($callbacks),count($executed));
+		$this->assert_equals($expect,count($executed));
 	}
 
 	public function assert_does_not_fire($callbacks, $closure)
@@ -55,8 +56,12 @@ class ModelCallbackTest extends DatabaseTest
 
 	public function test_fire_validation_callbacks_on_insert()
 	{
-		$this->assert_fires(array('before_validation','after_validation','before_validation_on_create','after_validation_on_create'),
-			function($model) { $model = new Venue(); $model->save(); });
+		$this->assert_fires(array(
+                    'before_validation',
+                    'after_validation',
+                    'before_validation_on_create',
+                    'after_validation_on_create'),
+		function($model) { $model = new Venue(); $model->save(); });
 	}
 
 	public function test_fire_validation_callbacks_on_update()

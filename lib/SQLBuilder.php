@@ -30,6 +30,7 @@ class SQLBuilder
 	// for insert/update
 	private $data;
 	private $sequence;
+        // for find conditions
 
 	/**
 	 * Constructor.
@@ -90,6 +91,7 @@ class SQLBuilder
 
 	public function get_where_values()
 	{
+            
 		return $this->where_values;
 	}
 
@@ -211,12 +213,16 @@ class SQLBuilder
 	 * @param $map A hash of "mapped_column_name" => "real_column_name"
 	 * @return A conditions array in the form array(sql_string, value1, value2,...)
 	 */
-	public static function create_conditions_from_underscored_string(Connection $connection, $name, &$values=array(), &$map=null)
+	public static function create_conditions_from_underscored_string(Connection $connection, $name, &$values, &$map=null)
 	{
 		if (!$name)
 			return null;
 
 		$parts = preg_split('/(_and_|_or_)/i',$name,-1,PREG_SPLIT_DELIM_CAPTURE);
+                if (!is_array($values)) {
+                    
+                    $values = [];
+                }
 		$num_values = count($values);
 		$conditions = array('');
 
@@ -229,7 +235,7 @@ class SQLBuilder
 			{
 				if (!is_null($values[$j]))
 				{
-					$bind = is_array($values[$j]) ? ' IN(?)' : '=?';
+					$bind = is_array($values[$j]) ? ' IN (?)' : '=?';
 					$conditions[] = $values[$j];
 				}
 				else

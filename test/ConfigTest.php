@@ -31,11 +31,12 @@ class ConfigTest extends SnakeCase_PHPUnit_Framework_TestCase
 	/**
 	 * @expectedException ActiveRecord\ConfigException
 	 */
+        /**
 	public function test_set_connections_must_be_array()
 	{
 		$this->config->set_connections(null);
 	}
-
+        */
 	public function test_get_connections()
 	{
 		$this->assert_equals($this->connections,$this->config->get_connections());
@@ -51,35 +52,35 @@ class ConfigTest extends SnakeCase_PHPUnit_Framework_TestCase
 		$this->assert_null($this->config->get_connection('whiskey tango foxtrot'));
 	}
 
-	public function test_get_default_connection_and_connection()
+	public function test_get_default_name_and_connection()
 	{
-		$this->config->set_default_connection('development');
-		$this->assert_equals('development',$this->config->get_default_connection());
-		$this->assert_equals($this->connections['development'],$this->config->get_default_connection_string());
+		$this->config->set_default_name('development');
+		$this->assert_equals('development',$this->config->get_default_name());
+		$this->assert_equals($this->connections['development'],$this->config->get_default_connection());
 	}
 
 	public function test_get_default_connection_and_connection_string_defaults_to_development()
 	{
-		$this->assert_equals('development',$this->config->get_default_connection());
-		$this->assert_equals($this->connections['development'],$this->config->get_default_connection_string());
+		$this->assert_equals('development',$this->config->get_default_name());
+		$this->assert_equals($this->connections['development'],$this->config->get_default_connection());
 	}
 
 	public function test_get_default_connection_string_when_connection_name_is_not_valid()
 	{
-		$this->config->set_default_connection('little mac');
-		$this->assert_null($this->config->get_default_connection_string());
+		$this->config->set_default_name('little mac');
+		$this->assert_null($this->config->get_default_connection());
 	}
 
 	public function test_default_connection_is_set_when_only_one_connection_is_present()
 	{
 		$this->config->set_connections(array('development' => $this->connections['development']));
-		$this->assert_equals('development',$this->config->get_default_connection());
+		$this->assert_equals('development',$this->config->get_default_name());
 	}
 
 	public function test_set_connections_with_default()
 	{
 		$this->config->set_connections($this->connections,'test');
-		$this->assert_equals('test',$this->config->get_default_connection());
+		$this->assert_equals('test',$this->config->get_default_name());
 	}
 
 	public function test_get_date_class_with_default()
@@ -87,19 +88,15 @@ class ConfigTest extends SnakeCase_PHPUnit_Framework_TestCase
 		$this->assert_equals('ActiveRecord\\DateTime', $this->config->get_date_class());
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ConfigException
-	 */
 	public function test_set_date_class_when_class_doesnt_exist()
 	{
+            $this->expectException('ActiveRecord\ConfigException');
 		$this->config->set_date_class('doesntexist');
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ConfigException
-	 */
 	public function test_set_date_class_when_class_doesnt_have_format_or_createfromformat()
 	{
+            $this->expectException('ActiveRecord\ConfigException');
 		$this->config->set_date_class('TestLogger');
 	}
 
@@ -108,6 +105,7 @@ class ConfigTest extends SnakeCase_PHPUnit_Framework_TestCase
 	 */
 	public function test_set_date_class_when_class_doesnt_have_createfromformat()
 	{
+            $this->expectException('ActiveRecord\ConfigException');
 		$this->config->set_date_class('TestDateTimeWithoutCreateFromFormat');
 	}
 

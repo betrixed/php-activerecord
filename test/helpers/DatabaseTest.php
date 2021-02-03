@@ -12,14 +12,14 @@ class DatabaseTest extends SnakeCase_PHPUnit_Framework_TestCase
 		ActiveRecord\Table::clear_cache();
 
 		$config = ActiveRecord\Config::instance();
-		$this->original_default_connection = $config->get_default_connection();
+		$this->original_default_name = $config->get_default_name();
 
 		$this->original_date_class = $config->get_date_class();
 
 		if ($connection_name)
-			$config->set_default_connection($connection_name);
+			$config->set_default_name($connection_name);
 
-		if ($connection_name == 'sqlite' || $config->get_default_connection() == 'sqlite')
+		if ($connection_name == 'sqlite' || $config->get_default_name() == 'sqlite')
 		{
 			// need to create the db. the adapter specifically does not create it for us.
 			static::$db = substr(ActiveRecord\Config::instance()->get_connection('sqlite'),9);
@@ -45,8 +45,8 @@ class DatabaseTest extends SnakeCase_PHPUnit_Framework_TestCase
 	public function tear_down()
 	{
 		ActiveRecord\Config::instance()->set_date_class($this->original_date_class);
-		if ($this->original_default_connection)
-			ActiveRecord\Config::instance()->set_default_connection($this->original_default_connection);
+		if ($this->original_default_name)
+			ActiveRecord\Config::instance()->set_default_name($this->original_default_name);
 	}
 
 	public function assert_exception_message_contains($contains, $closure)
@@ -59,7 +59,7 @@ class DatabaseTest extends SnakeCase_PHPUnit_Framework_TestCase
 			$message = $e->getMessage();
 		}
 
-		$this->assertContains($contains, $message);
+		$this->assertStringContainsString($contains, $message);
 	}
 
 	/**
@@ -72,14 +72,14 @@ class DatabaseTest extends SnakeCase_PHPUnit_Framework_TestCase
 	{
 		$needle = str_replace(array('"','`'),'',$needle);
 		$haystack = str_replace(array('"','`'),'',$haystack);
-		return $this->assertContains($needle, $haystack);
+		return $this->assertStringContainsString($needle, $haystack);
 	}
 
 	public function assert_sql_doesnt_has($needle, $haystack)
 	{
 		$needle = str_replace(array('"','`'),'',$needle);
 		$haystack = str_replace(array('"','`'),'',$haystack);
-		return $this->assertNotContains($needle, $haystack);
+		return $this->assertFalse(str_contains($needle, $haystack),"Should not contain " . $needle);
 	}
 }
-?>
+

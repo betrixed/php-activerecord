@@ -2,12 +2,13 @@
 
 class ActiveRecordFindTest extends DatabaseTest
 {
-	/**
-	 * @expectedException ActiveRecord\RecordNotFound
-	 */
+
 	public function test_find_with_no_params()
 	{
-		Author::find();
+            // more than one returned
+            
+            $results = Author::find();
+            $this->assert_true(count($results) >= 3);
 	}
 
 	public function test_find_by_pk()
@@ -16,25 +17,25 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_equals(3,$author->id);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\RecordNotFound
-	 */
 	public function test_find_by_pkno_results()
 	{
-		Author::find(99999999);
+            $rec = Author::find(99999999);
+            $this->assert_true($rec === null);
 	}
-
+        
+	public function test_find_by_pk_array()
+	{
+		$authors = Author::find(1,'2');
+		$this->assert_equals(2, count($authors));
+		$this->assert_equals(1, $authors[0]->id);
+		$this->assert_equals(2, $authors[1]->id);
+	}
 	public function test_find_by_multiple_pk_with_partial_match()
 	{
-		try
-		{
-			Author::find(1,999999999);
-			$this->fail();
-		}
-		catch (ActiveRecord\RecordNotFound $e)
-		{
-			$this->assert_true(strpos($e->getMessage(),'found 1, but was looking for 2') !== false);
-		}
+            $list = Author::find(1,999999999);
+            
+            $this->assert_equals(1, count($list));
+            $this->assert_equals(1, $list[0]->id);
 	}
 
 	public function test_find_by_pk_with_options()
@@ -44,13 +45,7 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_true(strpos(Author::table()->last_sql,'ORDER BY name') !== false);
 	}
 
-	public function test_find_by_pk_array()
-	{
-		$authors = Author::find(1,'2');
-		$this->assert_equals(2, count($authors));
-		$this->assert_equals(1, $authors[0]->id);
-		$this->assert_equals(2, $authors[1]->id);
-	}
+
 
 	public function test_find_by_pk_array_with_options()
 	{
@@ -59,12 +54,11 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_true(strpos(Author::table()->last_sql,'ORDER BY name') !== false);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\RecordNotFound
-	 */
 	public function test_find_nothing_with_sql_in_string()
 	{
-		Author::first('name = 123123123');
+
+	    $rec = Author::first('name = 123123123');
+            $this->assert_true($rec === null);
 	}
 
 	public function test_find_all()
@@ -84,7 +78,9 @@ class ActiveRecordFindTest extends DatabaseTest
 	 */
 	public function test_find_all_with_empty_array_bind_value_throws_exception()
 	{
-		$authors = Author::find('all',array('conditions' => array('author_id IN(?)', array())));
+                $this->expectException('ActiveRecord\DatabaseException');
+		$authors = Author::find('all',
+                        ['conditions' => ['author_id IN(?)',[]]]);
 		$this->assertCount(0,$authors);
 	}
 
@@ -96,7 +92,7 @@ class ActiveRecordFindTest extends DatabaseTest
 
 	public function test_find_hash_using_alias_with_null()
 	{
-		$venues = Venue::all(array('conditions' => array('marquee' => null)));
+		$venues = Venue::all(['conditions' => ['marquee' => null]]);
 		$this->assert_equals(0,count($venues));
 	}
 
@@ -125,8 +121,9 @@ class ActiveRecordFindTest extends DatabaseTest
 
 	public function test_find_all_no_results()
 	{
-		$authors = Author::find('all',array('conditions' => array('author_id IN(11111111111,22222222222,333333333333)')));
-		$this->assert_equals(array(),$authors);
+		$authors = Author::find('all',
+                        ['conditions' => ['author_id IN (11111111111,22222222222,333333333333)']]);
+		$this->assert_equals([],$authors);
 	}
 
 	public function test_find_first()
@@ -174,7 +171,7 @@ class ActiveRecordFindTest extends DatabaseTest
 
 	public function test_find_with_conditions()
 	{
-		$author = Author::find(array('conditions' => array('author_id=? and name=?', 1, 'Tito')));
+		$author = Author::find( ['conditions' =>  ['author_id=? and name=?', 1, 'Tito']]);
 		$this->assert_equals(1,$author->author_id);
 	}
 
@@ -264,11 +261,9 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_null(Author::find_by_name_or_author_id());
 	}
 
-	/**
-	 * @expectedException ActiveRecord\DatabaseException
-	 */
 	public function test_find_by_call_static_invalid_column_name()
 	{
+                $this->expectException('ActiveRecord\ActiveRecordException');
 		Author::find_by_sharks();
 	}
 
@@ -296,12 +291,10 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_equals('Bill Clinton',$author[1]->name);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ActiveRecordException
-	 */
 	public function test_find_all_by_call_static_undefined_method()
 	{
-		Author::find_sharks('Tito');
+            $this->expectException('ActiveRecord\ActiveRecordException');
+            Author::find_sharks('Tito');
 	}
 
 	public function test_find_all_takes_limit_options()
@@ -310,12 +303,10 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_equals('George W. Bush',$authors[0]->name);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ActiveRecordException
-	 */
 	public function test_find_by_call_static_with_invalid_field_name()
 	{
-		Author::find_by_some_invalid_field_name('Tito');
+            $this->expectException('ActiveRecord\DatabaseException');
+            Author::find_by_some_invalid_field_name('Tito');
 	}
 
 	public function test_find_with_select()
@@ -327,13 +318,9 @@ class ActiveRecordFindTest extends DatabaseTest
 
 	public function test_find_with_select_non_selected_fields_should_not_have_attributes()
 	{
-		$author = Author::first(array('select' => 'name, 123 as bubba'));
-		try {
-			$author->id;
-			$this->fail('expected ActiveRecord\UndefinedPropertyExecption');
-		} catch (ActiveRecord\UndefinedPropertyException $e) {
-			;
-		}
+                $this->expectException('ActiveRecord\UndefinedPropertyException');
+		$author = Author::first(['select' => 'name, 123 as bubba']);
+                $id = $author->id; 
 	}
 
 	public function test_joins_on_model_with_association_and_explicit_joins()
@@ -401,11 +388,10 @@ class ActiveRecordFindTest extends DatabaseTest
 		}
 	}
 
-	/**
-	 * @expectedException ActiveRecord\DatabaseException
-	 */
+
 	public function test_from_with_invalid_table()
 	{
+                $this->expectException('ActiveRecord\DatabaseException');
 		$author = Author::find('first', array('from' => 'wrong_authors_table'));
 	}
 
@@ -434,22 +420,19 @@ class ActiveRecordFindTest extends DatabaseTest
 	 */
 	public function test_find_or_create_by_throws_exception_when_using_or()
 	{
+                $this->expectException('ActiveRecord\ActiveRecordException');
 		Author::find_or_create_by_name_or_encrypted_password('New Guy','pencil');
 	}
 
-	/**
-	 * @expectedException ActiveRecord\RecordNotFound
-	 */
 	public function test_find_by_zero()
 	{
-		Author::find(0);
+		$rec = Author::find(0);
+                $this->assertTrue($rec === null);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\RecordNotFound
-	 */
 	public function test_find_by_null()
 	{
+                $this->expectException('ActiveRecord\RecordNotFound');
 		Author::find(null);
 	}
 
@@ -476,5 +459,4 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_not_null(Author::find_by_created_at($now));
 		$this->assert_not_null(Author::find_by_created_at($arnow));
 	}
-};
-?>
+}

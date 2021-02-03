@@ -104,8 +104,8 @@ class ValidationsTest extends DatabaseTest
 
 	public function test_validates_uniqueness_of()
 	{
-		BookValidations::create(array('name' => 'bob'));
-		$book = BookValidations::create(array('name' => 'bob'));
+		BookValidations::createInserted(array('name' => 'bob'));
+		$book = BookValidations::createInserted(array('name' => 'bob'));
 
 		$this->assert_equals(array("Name must be unique"),$book->errors->full_messages());
 		$this->assert_equals(1,BookValidations::count(array('conditions' => "name='bob'")));
@@ -137,15 +137,15 @@ class ValidationsTest extends DatabaseTest
 	public function test_validates_uniqueness_of_works_with_alias_attribute()
 	{
 		BookValidations::$validates_uniqueness_of[0] = array(array('name_alias','x'));
-		$book = BookValidations::create(array('name_alias' => 'Another Book', 'x' => 2));
+		$book = BookValidations::createInserted(array('name_alias' => 'Another Book', 'x' => 2));
 		$this->assert_false($book->is_valid());
 		$this->assert_equals(array('Name alias and x must be unique'), $book->errors->full_messages());
 	}
 
 	public function test_validates_uniqueness_of_works_with_mysql_reserved_word_as_column_name()
 	{
-		ValuestoreValidations::create(array('key' => 'GA_KEY', 'value' => 'UA-1234567-1'));
-		$valuestore = ValuestoreValidations::create(array('key' => 'GA_KEY', 'value' => 'UA-1234567-2'));
+		ValuestoreValidations::createInserted(array('key' => 'GA_KEY', 'value' => 'UA-1234567-1'));
+		$valuestore = ValuestoreValidations::createInserted(array('key' => 'GA_KEY', 'value' => 'UA-1234567-2'));
 
 		$this->assert_equals(array("Key must be unique"),$valuestore->errors->full_messages());
 		$this->assert_equals(1,ValuestoreValidations::count(array('conditions' => "`key`='GA_KEY'")));

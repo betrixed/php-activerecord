@@ -17,14 +17,6 @@
  *
  **/
 
-require_once 'vendor/autoload.php';
-
-require_once 'SnakeCase_PHPUnit_Framework_TestCase.php';
-
-require_once 'DatabaseTest.php';
-require_once 'AdapterTest.php';
-
-require_once __DIR__ . '/../../ActiveRecord.php';
 
 // whether or not to run the slow non-crucial tests
 $GLOBALS['slow_tests'] = false;
@@ -38,6 +30,7 @@ if (getenv('LOG') !== 'false')
 
 ActiveRecord\Config::initialize(function($cfg)
 {
+        
 	$cfg->set_model_directory(realpath(__DIR__ . '/../models'));
 	$cfg->set_connections(array(
 		'mysql'  => getenv('PHPAR_MYSQL')  ?: 'mysql://test:test@127.0.0.1/test',
@@ -45,12 +38,12 @@ ActiveRecord\Config::initialize(function($cfg)
 		'oci'    => getenv('PHPAR_OCI')    ?: 'oci://test:test@127.0.0.1/dev',
 		'sqlite' => getenv('PHPAR_SQLITE') ?: 'sqlite://test.db'));
 
-	$cfg->set_default_connection('mysql');
+	$cfg->set_default_name('mysql');
 
 	for ($i=0; $i<count($GLOBALS['argv']); ++$i)
 	{
 		if ($GLOBALS['argv'][$i] == '--adapter')
-			$cfg->set_default_connection($GLOBALS['argv'][$i+1]);
+			$cfg->set_default_name($GLOBALS['argv'][$i+1]);
 		elseif ($GLOBALS['argv'][$i] == '--slow-tests')
 			$GLOBALS['slow_tests'] = true;
 	}
@@ -82,4 +75,3 @@ ActiveRecord\Config::initialize(function($cfg)
 });
 
 error_reporting(E_ALL | E_STRICT);
-?>

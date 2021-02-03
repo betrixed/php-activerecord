@@ -65,7 +65,7 @@ class OciAdapter extends Connection
 			"WHERE rownum <= $stop) WHERE ar_rnum__ > $offset";
 	}
 
-	public function query_column_info($table)
+	public function query_column_info($table)  : array
 	{
 		$sql = 
 			"SELECT c.column_name, c.data_type, c.data_length, c.data_scale, c.data_default, c.nullable, " .
@@ -79,12 +79,14 @@ class OciAdapter extends Connection
 			"WHERE t.table_name=?";
 
 		$values = array(strtoupper($table));
-		return $this->query($sql,$values);
+		return $this->fetchAllRows($this->query($sql,$values));
 	}
 
-	public function query_for_tables()
+	public function query_for_tables() : array
 	{
-		return $this->query("SELECT table_name FROM user_tables");
+		return $this->fetchAllRows(
+                        $this->query("SELECT table_name FROM user_tables"
+                        ,\PDO::FETCH_COLUMN));
 	}
 
 	public function create_column(&$column)

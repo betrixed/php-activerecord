@@ -35,12 +35,10 @@ class AdapterTest extends DatabaseTest
 		$this->assert_not_null(ActiveRecord\Connection::instance());
 	}
 
-	/**
-	 * @expectedException ActiveRecord\DatabaseException
-	 */
 	public function test_invalid_connection_protocol()
 	{
-		ActiveRecord\Connection::instance('terribledb://user:pass@host/db');
+            $this->expectException('ActiveRecord\DatabaseException');
+            ActiveRecord\Connection::instance('terribledb://user:pass@host/db');
 	}
 
 	/**
@@ -48,43 +46,39 @@ class AdapterTest extends DatabaseTest
 	 */
 	public function test_no_host_connection()
 	{
-		if (!$GLOBALS['slow_tests'])
-			throw new ActiveRecord\DatabaseException("");
+            $this->expectException('ActiveRecord\DatabaseException');
+            if (!$GLOBALS['slow_tests'])
+                throw new ActiveRecord\DatabaseException("");
 
-		ActiveRecord\Connection::instance("{$this->conn->protocol}://user:pass");
+            ActiveRecord\Connection::instance("{$this->conn->protocol}://user:pass");
 	}
 
-	/**
-	 * @expectedException ActiveRecord\DatabaseException
-	 */
 	public function test_connection_failed_invalid_host()
 	{
-		if (!$GLOBALS['slow_tests'])
-			throw new ActiveRecord\DatabaseException("");
+            $this->expectException('ActiveRecord\DatabaseException');
+            if (!$GLOBALS['slow_tests'])
+                throw new ActiveRecord\DatabaseException("");
 
-		ActiveRecord\Connection::instance("{$this->conn->protocol}://user:pass/1.1.1.1/db");
+            ActiveRecord\Connection::instance("{$this->conn->protocol}://user:pass/1.1.1.1/db");
 	}
 
-	/**
-	 * @expectedException ActiveRecord\DatabaseException
-	 */
 	public function test_connection_failed()
 	{
-		ActiveRecord\Connection::instance("{$this->conn->protocol}://baduser:badpass@127.0.0.1/db");
+            $this->expectException('ActiveRecord\DatabaseException');
+            ActiveRecord\Connection::instance("{$this->conn->protocol}://baduser:badpass@127.0.0.1/db");
 	}
 
-	/**
-	 * @expectedException ActiveRecord\DatabaseException
-	 */
+
 	public function test_connect_failed()
 	{
+            $this->expectException('ActiveRecord\DatabaseException');
 		ActiveRecord\Connection::instance("{$this->conn->protocol}://zzz:zzz@127.0.0.1/test");
 	}
 
 	public function test_connect_with_port()
 	{
 		$config = ActiveRecord\Config::instance();
-		$name = $config->get_default_connection();
+		$name = $config->get_default_name();
 		$url = parse_url($config->get_connection($name));
 		$conn = $this->conn;
 		$port = $conn::$DEFAULT_PORT;
@@ -95,16 +89,19 @@ class AdapterTest extends DatabaseTest
 		}
 		$connection_string = "{$connection_string}@{$url['host']}:$port{$url['path']}";
 
-		if ($this->conn->protocol != 'sqlite')
-			ActiveRecord\Connection::instance($connection_string);
+		if ($this->conn->protocol != 'sqlite') {
+			$obj = ActiveRecord\Connection::instance($connection_string);
+                        $this->assert_true($obj->hasConnection());
+                }
+                else {
+                    $this->markTestSkipped('Adapter sqlite has no requirement for port');
+                }
 	}
 
-	/**
-	 * @expectedException ActiveRecord\DatabaseException
-	 */
 	public function test_connect_to_invalid_database()
 	{
-		ActiveRecord\Connection::instance("{$this->conn->protocol}://test:test@127.0.0.1/" . self::InvalidDb);
+            $this->expectException('ActiveRecord\DatabaseException');
+            ActiveRecord\Connection::instance("{$this->conn->protocol}://test:test@127.0.0.1/" . self::InvalidDb);
 	}
 
 	public function test_date_time_type()
@@ -150,6 +147,9 @@ class AdapterTest extends DatabaseTest
 			$author_columns = $this->conn->columns('authors');
 			$this->assert_equals('authors_author_id_seq',$author_columns['author_id']->sequence);
 		}
+                else {
+                    $this->markTestSkipped('Adapter ' . $this->conn->getType() . ' does not support sequences');
+                }
 	}
 
 	public function test_columns_default()
@@ -197,6 +197,7 @@ class AdapterTest extends DatabaseTest
 	 */
 	public function test_invalid_query()
 	{
+            $this->expectException('ActiveRecord\DatabaseException');
 		$this->conn->query('alsdkjfsdf');
 	}
 
@@ -339,18 +340,13 @@ class AdapterTest extends DatabaseTest
 
 	public function test_query_column_info()
 	{
-		$this->assert_greater_than(0,count($this->conn->query_column_info("authors")));
+            $rows = $this->conn->query_column_info("authors");
+            $this->assert_true(!empty($rows));
 	}
 
 	public function test_query_table_info()
 	{
 		$this->assert_greater_than(0,count($this->conn->query_for_tables()));
-	}
-
-	public function test_query_table_info_must_return_one_field()
-	{
-		$sth = $this->conn->query_for_tables();
-		$this->assert_equals(1,count($sth->fetch()));
 	}
 
 	public function test_transaction_commit()
@@ -398,7 +394,7 @@ class AdapterTest extends DatabaseTest
 
 	public function test_datetime_to_string()
 	{
-		$datetime = '2009-01-01 01:01:01 EST';
+		$datetime = '2009-01-01 01:01:01';
 		$this->assert_equals($datetime,$this->conn->datetime_to_string(date_create($datetime)));
 	}
 

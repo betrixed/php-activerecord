@@ -7,11 +7,12 @@
 namespace ActiveRecord;
 
 require_once 'Column.php';
+require_once 'Exceptions.php';
 
 use PDO;
 use PDOException;
 use Closure;
-
+use stdClass;
 /**
  * The base class for database connection adapters.
  *
@@ -35,7 +36,7 @@ abstract class Connection
 	 * The PDO connection object.
 	 * @var mixed
 	 */
-	public $connection;
+	public $connection = null;
 	/**
 	 * The last query run.
 	 * @var string
@@ -58,16 +59,26 @@ abstract class Connection
 	 * @var string
 	 */
 	public $protocol;
+        
+        /**
+         * Parsed connection information
+         * @var stdClass 
+         * 
+         */
+        protected $info;
+        
 	/**
 	 * Database's date format
 	 * @var string
 	 */
+        
+        
 	static $date_format = 'Y-m-d';
 	/**
 	 * Database's datetime format
 	 * @var string
 	 */
-	static $datetime_format = 'Y-m-d H:i:s T';
+	static $datetime_format = 'Y-m-d H:i:s';
 	/**
 	 * Default PDO options to set for each connection.
 	 * @var array
@@ -88,6 +99,7 @@ abstract class Connection
 	 */
 	static $DEFAULT_PORT = 0;
 
+        
 	/**
 	 * Retrieve a database connection.
 	 *
@@ -99,23 +111,42 @@ abstract class Connection
 	 * @return Connection
 	 * @see parse_connection_url
 	 */
-	public static function instance($connection_string_or_connection_name=null)
+	public static function instance($connection_string_or_connection_name=null) : Connection
 	{
 		$config = Config::instance();
 
 		if (strpos($connection_string_or_connection_name, '://') === false)
 		{
-			$connection_string = $connection_string_or_connection_name ?
+			$connection_data = $connection_string_or_connection_name ?
 				$config->get_connection($connection_string_or_connection_name) :
-				$config->get_default_connection_string();
+				$config->get_default_connection();              
 		}
-		else
-			$connection_string = $connection_string_or_connection_name;
-
-		if (!$connection_string)
-			throw new DatabaseException("Empty connection string");
-
-		$info = static::parse_connection_url($connection_string);
+		else {
+			$connection_data = $connection_string_or_connection_name;
+                }
+		if (!$connection_data) {
+			throw new DatabaseException("Empty connection data");
+                }
+                if (is_string($connection_data)) {
+                    $info = static::parse_connection_url($connection_data);
+                }
+                else if (is_array($connection_data)) {
+                    $info = new stdClass();
+                    $toMember = ['username' => 'user', 
+                                 'adapter'=> 'protocol',
+                                 'port' => 'port',
+                                 'charset' => 'charset',
+                                 'host' => 'host',
+                                 'dbname' => 'db',
+                                 'password' => 'pass'];
+                    
+                                 
+                    foreach($toMember as $key1 => $key2) {
+                        if (isset($connection_data[$key1])) {
+                            $info->{$key2} = $connection_data[$key1];
+                        }
+                    }
+                }
 		$fqclass = static::load_adapter_class($info->protocol);
 
 		try {
@@ -123,15 +154,30 @@ abstract class Connection
 			$connection->protocol = $info->protocol;
 			$connection->logging = $config->get_logging();
 			$connection->logger = $connection->logging ? $config->get_logger() : null;
-
-			if (isset($info->charset))
+                        $connection->info = $info;
+			if (isset($info->charset)) {
 				$connection->set_encoding($info->charset);
+                        }
+                        $info->pass = null;
+                        $connection->after_connect();
 		} catch (PDOException $e) {
 			throw new DatabaseException($e);
 		}
+                // by now the $info object password is not required
+                
 		return $connection;
 	}
+        
+        public function hasConnection() {
+            return ($this->connection !== null);
+        }
 
+        public function getSchema() : string {
+            if (isset($this->info)) {
+                return $this->info->db;
+            }
+            return "";
+        }
 	/**
 	 * Loads the specified class for an adapter.
 	 *
@@ -236,14 +282,21 @@ abstract class Connection
 
 		return $info;
 	}
-
+        /**
+         * For adapter specific settings post connection
+         * @param stdClass $info
+         */
+        public function after_connect()
+        {
+            
+        }
 	/**
 	 * Class Connection is a singleton. Access it via instance().
 	 *
 	 * @param array $info Array containing URL parts
 	 * @return Connection
 	 */
-	protected function __construct($info)
+	protected function __construct(stdClass $info)
 	{
 		try {
 			// unix sockets start with a /
@@ -258,7 +311,8 @@ abstract class Connection
 				$host = "unix_socket=$info->host";
 
 			$this->connection = new PDO("$info->protocol:$host;dbname=$info->db", $info->user, $info->pass, static::$PDO_OPTIONS);
-		} catch (PDOException $e) {
+		
+                        } catch (PDOException $e) {
 			throw new DatabaseException($e);
 		}
 	}
@@ -272,15 +326,20 @@ abstract class Connection
 	public function columns($table)
 	{
 		$columns = array();
-		$sth = $this->query_column_info($table);
+		$rows = $this->query_column_info($table);
 
-		while (($row = $sth->fetch())) {
+		foreach ($rows as $row) {
 			$c = $this->create_column($row);
 			$columns[$c->name] = $c;
 		}
 		return $columns;
 	}
 
+        // adapter type, mysql, postgresql, sqlite
+        public function getType() : string 
+        {
+            return $this->protocol;
+        }
 	/**
 	 * Escapes quotes in a string.
 	 *
@@ -292,6 +351,15 @@ abstract class Connection
 		return $this->connection->quote($string);
 	}
 
+        public function fetchAllRows($sth, int $mode = \PDO::FETCH_ASSOC) : array {
+            if (!empty($sth)) {
+                return $sth->fetchAll($mode);
+            }
+            else {
+                return [];
+            }
+        }
+        
 	/**
 	 * Retrieve the insert id of the last model saved.
 	 *
@@ -337,7 +405,7 @@ abstract class Connection
 		}
 		return $sth;
 	}
-
+        
 	/**
 	 * Execute a query that returns maximum of one row with one field and return it.
 	 *
@@ -373,15 +441,43 @@ abstract class Connection
 	 */
 	public function tables()
 	{
-		$tables = array();
-		$sth = $this->query_for_tables();
-
-		while (($row = $sth->fetch(PDO::FETCH_NUM)))
-			$tables[] = $row[0];
-
-		return $tables;
+		return $this->query_for_tables();
 	}
+        
+        public function exec(string $sql) : int {
+            return $this->connection->exec($sql);
+        }
+        /**
+         * Unfortunately different to exec
+         * @param string $sql
+         * @param array $parrams // must be specified
+         * @param array $bindtypes
+         */
+        public function execute(string $sql, array $params, array $bindtypes = null) : bool {
+           
+           $db = $this->connection;
 
+           $sth = $db->prepare($sql);
+           
+           if (is_array($bindtypes)) {
+               foreach($params as $key => $value) {
+                   $sth->bindValue($key, $value, $bindtypes[$key]);
+               }
+               return $sth->execute();
+           }
+           return $sth->execute($params);
+
+           
+        }
+        
+        // return a prepared PDO statement handle
+        public function prepare(string $sql) : object {
+            return $this->connection->prepare($sql);
+        }
+        // alias for begin transaction
+        public function begin() {
+            $this->transaction();
+        }
 	/**
 	 * Starts a transaction.
 	 */
@@ -515,7 +611,7 @@ abstract class Connection
 	 * @param string $table Name of a table
 	 * @return PDOStatement
 	 */
-	abstract public function query_column_info($table);
+	abstract public function query_column_info($table) : array;
 
 	/**
 	 * Query for all tables in the current database. The result must only
@@ -523,7 +619,7 @@ abstract class Connection
 	 *
 	 * @return PDOStatement
 	 */
-	abstract function query_for_tables();
+	abstract function query_for_tables() : array;
 
 	/**
 	 * Executes query to specify the character set for this connection.

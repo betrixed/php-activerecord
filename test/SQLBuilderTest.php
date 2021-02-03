@@ -37,6 +37,7 @@ class SQLBuilderTest extends DatabaseTest
 	 */
 	public function test_no_connection()
 	{
+            $this->expectException('ActiveRecord\ActiveRecordException');
 		new SQLBuilder(null,'authors');
 	}
 
@@ -62,15 +63,15 @@ class SQLBuilderTest extends DatabaseTest
 	public function test_where_with_hash_and_array()
 	{
 		$this->sql->where(array('id' => 1, 'name' => array('Tito','Mexican')));
-		$this->assert_sql_has("SELECT * FROM authors WHERE id=? AND name IN(?,?)",(string)$this->sql);
+		$this->assert_sql_has("SELECT * FROM authors WHERE id=? AND name IN (?,?)",(string)$this->sql);
 		$this->assert_equals(array(1,'Tito','Mexican'),$this->sql->get_where_values());
 	}
 
 	public function test_gh134_where_with_hash_and_null()
 	{
 		$this->sql->where(array('id' => 1, 'name' => null));
-		$this->assert_sql_has("SELECT * FROM authors WHERE id=? AND name IS ?",(string)$this->sql);
-		$this->assert_equals(array(1, null),$this->sql->get_where_values());
+		$this->assert_sql_has("SELECT * FROM authors WHERE id=? AND name IS NULL",(string)$this->sql);
+		$this->assert_equals(array(1),$this->sql->get_where_values());
 	}
 
 	public function test_where_with_null()
@@ -132,11 +133,10 @@ class SQLBuilderTest extends DatabaseTest
 		$this->assert_sql_has($this->conn->limit("SELECT * FROM authors WHERE id=? GROUP BY name HAVING created_at > '2009-01-01' ORDER BY name",1,10), (string)$this->sql);
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ActiveRecordException
-	 */
+
 	public function test_insert_requires_hash()
 	{
+            $this->expectException('ActiveRecord\ActiveRecordException');
 		$this->sql->insert(array(1));
 	}
 
@@ -196,7 +196,7 @@ class SQLBuilderTest extends DatabaseTest
 	public function test_delete_with_hash()
 	{
 		$this->sql->delete(array('id' => 1, 'name' => array('Tito','Mexican')));
-		$this->assert_sql_has("DELETE FROM authors WHERE id=? AND name IN(?,?)",$this->sql->to_s());
+		$this->assert_sql_has("DELETE FROM authors WHERE id=? AND name IN (?,?)",$this->sql->to_s());
 		$this->assert_equals(array(1,'Tito','Mexican'),$this->sql->get_where_values());
 	}
 
@@ -224,7 +224,7 @@ class SQLBuilderTest extends DatabaseTest
 	{
 		$this->assert_conditions('id=? AND name=? OR z=?',array(1,'Tito','X'),'id_and_name_or_z');
 		$this->assert_conditions('id=?',array(1),'id');
-		$this->assert_conditions('id IN(?)',array(array(1,2)),'id');
+		$this->assert_conditions('id IN (?)',array(array(1,2)),'id');
 	}
 
 	public function test_create_conditions_from_underscored_string_with_nulls()

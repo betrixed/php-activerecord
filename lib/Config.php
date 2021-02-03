@@ -41,11 +41,11 @@ class Config extends Singleton
 	 *
 	 * @var string
 	 */
-	private $default_connection = 'development';
+	private $default_name = 'development';
 
 	/**
-	 * Contains the list of database connection strings.
-	 *
+	 * Contains possibly mixed list of database connection strings.
+	 * and arrays with conneciton parameters.
 	 * @var array
 	 */
 	private $connections = array();
@@ -130,14 +130,14 @@ class Config extends Singleton
 	 * @return void
 	 * @throws ActiveRecord\ConfigException
 	 */
-	public function set_connections($connections, $default_connection=null)
+	public function set_connections(array $connections, $default_name=null)
 	{
 		if (!is_array($connections))
 			throw new ConfigException("Connections must be an array");
 
-		if ($default_connection)
-			$this->set_default_connection($default_connection);
-
+		if ($default_name) {
+			$this->default_name = $default_name;
+                }
 		$this->connections = $connections;
 	}
 
@@ -146,7 +146,7 @@ class Config extends Singleton
 	 *
 	 * @return array
 	 */
-	public function get_connections()
+	public function get_connections() : array
 	{
 		return $this->connections;
 	}
@@ -155,25 +155,24 @@ class Config extends Singleton
 	 * Returns a connection string if found otherwise null.
 	 *
 	 * @param string $name Name of connection to retrieve
-	 * @return string connection info for specified connection name
+	 * @return string | array connection info for specified connection name
 	 */
 	public function get_connection($name)
 	{
-		if (array_key_exists($name, $this->connections))
-			return $this->connections[$name];
-
-		return null;
+            return $this->connections[$name] ?? null;
 	}
 
 	/**
 	 * Returns the default connection string or null if there is none.
 	 *
-	 * @return string
+	 * @return null | array | string
 	 */
-	public function get_default_connection_string()
+	public function get_default_connection()
 	{
-		return array_key_exists($this->default_connection,$this->connections) ?
-			$this->connections[$this->default_connection] : null;
+            if (empty($this->default_name)) {
+                return null;
+            }
+            return $this->get_connection($this->default_name);
 	}
 
 	/**
@@ -181,9 +180,9 @@ class Config extends Singleton
 	 *
 	 * @return string
 	 */
-	public function get_default_connection()
+	public function get_default_name() : string
 	{
-		return $this->default_connection;
+		return $this->default_name;
 	}
 
 	/**
@@ -192,9 +191,9 @@ class Config extends Singleton
 	 * @param string $name Name of a connection in the connections array
 	 * @return void
 	 */
-	public function set_default_connection($name)
+	public function set_default_name(string $name)
 	{
-		$this->default_connection = $name;
+		$this->default_name = $name;
 	}
 
 	/**
@@ -330,4 +329,11 @@ class Config extends Singleton
 	{
 		Cache::initialize($url,$options);
 	}
+        
+        /**
+         * Add a single named connection data
+         */
+        public function add_connection(string $name, array $connect) {
+            $this->connections[$name] = $connect;
+        }
 }

@@ -34,7 +34,7 @@ class PgsqlAdapter extends Connection
 		return $sql . ' LIMIT ' . intval($limit) . ' OFFSET ' . intval($offset);
 	}
 
-	public function query_column_info($table)
+	public function query_column_info($table) : array
 	{
 		$sql = <<<SQL
 SELECT
@@ -61,12 +61,14 @@ WHERE c.relname = ?
 ORDER BY a.attnum
 SQL;
 		$values = array($table);
-		return $this->query($sql,$values);
+		return $this->fetchAllRows($this->query($sql,$values));
 	}
 
-	public function query_for_tables()
+	public function query_for_tables() : array
 	{
-		return $this->query("SELECT tablename FROM pg_tables WHERE schemaname NOT IN('information_schema','pg_catalog')");
+		return $this->fetchAllRows(
+                        $this->query("SELECT tablename FROM pg_tables WHERE schemaname NOT IN('information_schema','pg_catalog')")
+                        ,\PDO::FETCH_COLUMN);
 	}
 
 	public function create_column(&$column)

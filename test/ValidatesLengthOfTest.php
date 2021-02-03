@@ -288,11 +288,9 @@ class ValidatesLengthOfTest extends DatabaseTest
 		$this->fail('An expected exception has not be raised.');
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ValidationsArgumentError
-	 */
 	public function test_with_option_as_non_numeric()
 	{
+            $this->expectException('ActiveRecord\ValidationsArgumentError');
 		BookLength::$validates_length_of[0]['with'] = array('test');
 
 		$book = new BookLength;
@@ -300,11 +298,10 @@ class ValidatesLengthOfTest extends DatabaseTest
 		$book->save();
 	}
 
-	/**
-	 * @expectedException ActiveRecord\ValidationsArgumentError
-	 */
+
 	public function test_with_option_as_non_numeric_non_array()
 	{
+            $this->expectException('ActiveRecord\ValidationsArgumentError');
 		BookLength::$validates_length_of[0]['with'] = 'test';
 
 		$book = new BookLength;

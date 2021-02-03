@@ -31,14 +31,18 @@ class SqliteAdapter extends Connection
 		return "$sql LIMIT {$offset}$limit";
 	}
 
-	public function query_column_info($table)
+	public function query_column_info($table) : array
 	{
-		return $this->query("pragma table_info($table)");
+		return $this->fetchAllRows(
+                        $this->query("pragma table_info($table)")
+                        );
 	}
 
-	public function query_for_tables()
+	public function query_for_tables() : array
 	{
-		return $this->query("SELECT name FROM sqlite_master");
+		return $this->fetchAllRows(
+                        $this->query("SELECT name FROM sqlite_master")
+                        ,\PDO::FETCH_COLUMN);
 	}
 
 	public function create_column($column)
