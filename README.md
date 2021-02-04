@@ -1,17 +1,20 @@
 # PHP ActiveRecord - Version 1.0 Branch mr74 #
 
-## Changes for Branch mr74.
-Changes made for adaptation to existing Phalcon site.
+## Changes for Branch mr74. 
+Maybe requires PHP version >=  7.4
+Changes made for better compatibility to some existing Phalcon model interfaces, in my Mongrel websites code.
+
 Test cases massaged for PHPUnit version 9.5
 
 Model::find return  null instead of exception, if record not found for 'first' or primary key value.
 
-Model::find with no arguments defaults to 'all'.
+Model::find() with no arguments defaults to 'all' instead of exception.
 
 Config::get_default_connection  renamed as get_default_name.
+
 Config::get_default_connection_string renamed get_default_connection.
 
-Config connection data can be string or array of parameters.
+Config connection data can be a string or an array of parameters.
 
 Model methods create() and update() exist, for Phalcon\Db\Model compatibility,
  even though they only call the save() method.
@@ -21,6 +24,8 @@ private methods Model insert and update renamed to p_insert and p_update.
 static Model::create renamed to static Model::createInserted, as model object is to be returned as already saved.
 
 static Model::createInserted will not catch a DatabaseException.
+
+Memcached support added.
 
 ## Introduction ##
 A brief summarization of what ActiveRecord is:

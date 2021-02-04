@@ -5,14 +5,14 @@ class ActiveRecordCacheTest extends DatabaseTest
 {
 	public function set_up($connection_name=null)
 	{
-		if (!extension_loaded('memcache'))
+		if (!extension_loaded('memcached'))
 		{
-			$this->markTestSkipped('The memcache extension is not available');
+			$this->markTestSkipped('The memcached extension is not available');
 			return;
 		}
 		
 		parent::set_up($connection_name);
-		ActiveRecord\Config::instance()->set_cache('memcache://localhost');
+		ActiveRecord\Config::instance()->set_cache('memcached://localhost');
 	}
 
 	public function tear_down()
@@ -28,7 +28,7 @@ class ActiveRecordCacheTest extends DatabaseTest
 
 	public function test_explicit_default_expire()
 	{
-		ActiveRecord\Config::instance()->set_cache('memcache://localhost',array('expire' => 1));
+		ActiveRecord\Config::instance()->set_cache('memcached://localhost',array('expire' => 1));
 		$this->assert_equals(1,Cache::$options['expire']);
 	}
 
