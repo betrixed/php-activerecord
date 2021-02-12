@@ -1617,13 +1617,10 @@ class Model
 	 *   doing a first/last find. If doing an all find and no records matched this
 	 *   will return an empty array.
 	 */
+        
+
 	public static function find(/* $type, $options */)
 	{
-		$class = get_called_class();
-
-		/*if (func_num_args() <= 0)
-			throw new RecordNotFound("Couldn't find $class without an ID"); */
-
 		$args = func_get_args();
                 $num_args = count($args);
                 
@@ -1672,7 +1669,14 @@ class Model
 
 		return $single ? (!empty($list) ? $list[0] : null) : $list;
 	}
-
+        
+        public static function findAll() : array {
+            $args = func_get_args();
+            $num_args = count($args);
+            $options = static::extract_and_validate_options($args);
+            $options['mapped_names'] = static::$alias_attribute;
+            return static::table()->find($options);
+        }
 	/**
 	 * Will look up a list of primary keys from cache
 	 *

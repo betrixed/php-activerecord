@@ -264,6 +264,7 @@ class Table {
         $this->last_sql = $sql;
         $list = $attrs = array();
         $sth = $this->conn->query($sql, $this->process_data($values));
+        $sth->setFetchMode(\PDO::FETCH_ASSOC);
         return $this->sth_result($sth,$readonly,$includes);
     }
 
@@ -338,34 +339,34 @@ class Table {
         return array_key_exists($name, $this->relationships);
     }
 
-    public function insert(&$data, $pk = null, $sequence_name = null) {
+    public function insert(&$data, $pk = null, $sequence_name = null) : void {
         $data = $this->process_data($data);
 
         $sql = new SQLBuilder($this->conn, $this->get_fully_qualified_table_name());
         $sql->insert($data, $pk, $sequence_name);
 
         $values = array_values($data);
-        return $this->conn->query(($this->last_sql = $sql->to_s()), $values);
+        $this->conn->query(($this->last_sql = $sql->to_s()), $values);
     }
 
-    public function update(&$data, $where) {
+    public function update(&$data, $where) : void {
         $data = $this->process_data($data);
 
         $sql = new SQLBuilder($this->conn, $this->get_fully_qualified_table_name());
         $sql->update($data)->where($where);
 
         $values = $sql->bind_values();
-        return $this->conn->query(($this->last_sql = $sql->to_s()), $values);
+        $this->conn->query(($this->last_sql = $sql->to_s()), $values);
     }
 
-    public function delete($data) {
+    public function delete($data) : void {
         $data = $this->process_data($data);
 
         $sql = new SQLBuilder($this->conn, $this->get_fully_qualified_table_name());
         $sql->delete($data);
 
         $values = $sql->bind_values();
-        return $this->conn->query(($this->last_sql = $sql->to_s()), $values);
+        $this->conn->query(($this->last_sql = $sql->to_s()), $values);
     }
 
     /**

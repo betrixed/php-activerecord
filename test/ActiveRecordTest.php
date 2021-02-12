@@ -563,7 +563,7 @@ class ActiveRecordTest extends DatabaseTest
 		$row = Author::query('SELECT COUNT(*) AS n FROM authors',null)->fetch();
 		$this->assert_true($row['n'] > 1);
 
-		$row = Author::query('SELECT COUNT(*) AS n FROM authors WHERE name=?',array('Tito'))->fetch();
+		$row = Author::query('SELECT COUNT(*) AS n FROM authors WHERE name=?',array('Tito'))->fetch(\PDO::FETCH_ASSOC);
 		$this->assert_equals(array('n' => 1), $row);
 	}
 };

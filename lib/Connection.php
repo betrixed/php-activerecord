@@ -366,7 +366,7 @@ abstract class Connection {
      * @param array &$values Optional array of bind values
      * @return mixed A result set object
      */
-    public function query($sql, array $values = null, array $bindTypes = null) {
+    public function query($sql, array $values = null, array $bindTypes = null) : object {
         if ($this->logging) {
             $this->logger->log($sql);
             if ($values)
