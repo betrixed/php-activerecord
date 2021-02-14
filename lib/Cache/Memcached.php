@@ -1,10 +1,10 @@
 <?php
-namespace ActiveRecord;
+namespace ActiveRecord\Cache;
 
 class Memcached
 {
 	const DEFAULT_PORT = 11211;
-
+        const DEFAULT_HOST = 'localhost';
 	private $memcache;
 
 	/**
@@ -18,17 +18,15 @@ class Memcached
 	 * </ul>
 	 * @param array $options
 	 */
-	public function __construct($options)
+	public function __construct(array $options)
 	{
 		$this->memcache = new \Memcached();
-		$options['port'] = isset($options['port']) ? $options['port'] : self::DEFAULT_PORT;
-
-		if (!@$this->memcache->addServer($options['host'], $options['port'])) {
-			if ($error = error_get_last()) {
-				$message = $error['message'];
-			} else {
-				$message = sprintf('Could not connect to %s:%s', $options['host'], $options['port']);
-			}
+                
+                $port = $options['port'] ?? self::DEFAULT_PORT;
+                $host = $options['host'] ?? self::DEFAULT_HOST;
+                
+		if (!$this->memcache->addServer($host, $port)) {
+			$message = sprintf('Could not connect to %s:%s', $host, $port);
 			throw new CacheException($message);
 		}
 	}

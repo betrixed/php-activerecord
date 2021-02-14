@@ -7,9 +7,9 @@
  */
 
 $PHP_DIR = dirname(__DIR__);
-$PCAN_DIR = $PHP_DIR . "/vendor/betrixed/pcan/src";
+$PCAN_DIR = $PHP_DIR . "/pcan-wc/src";
 $loader = require_once $PCAN_DIR . "/WC/Loader.php";
-
+echo "PHP version: " . phpversion() . PHP_EOL;
 
 $loader->addPathArray([
     'ActiveRecord' => $PHP_DIR . "/activerecord/lib",

@@ -3,12 +3,12 @@ namespace ActiveRecord;
 use Closure;
 
 /**
- * Cache::get('the-cache-key', function() {
+ * DataCache::get('the-cache-key', function() {
  *	 # this gets executed when cache is stale
  *	 return "your cacheable datas";
  * });
  */
-class Cache
+class DataCache
 {
 	static $adapter = null;
 	static $options = array();
@@ -34,29 +34,32 @@ class Cache
 	 *
 	 * (Note: expiring needs to be implemented in your cache store.)
 	 *
-	 * @param string $url URL to your cache server
+	 * @param string $adapter Class name, without namespace.
 	 * @param array $options Specify additional options
 	 */
-	public static function initialize($url, $options=array())
+	public static function initialize(?string $adapter, array $options=[])
 	{
-		if ($url)
+                
+		if (!empty($adapter))
 		{
-			$url = parse_url($url);
-			$file = ucwords(Inflector::instance()->camelize($url['scheme']));
-			$class = "ActiveRecord\\$file";
-			require_once __DIR__ . "/cache/$file.php";
-			static::$adapter = new $class($url);
+			$class = "ActiveRecord\\Cache\\$adapter";
+			require_once __DIR__ . "/Cache/$adapter.php";
+			self::$adapter = new $class($options);
 		}
-		else
-			static::$adapter = null;
-
-		static::$options = array_merge(array('expire' => 30, 'namespace' => ''),$options);
+		else {
+			self::$adapter = null;
+                }
+		self::$options = array_merge(array('expire' => 30, 'namespace' => ''),$options);
 	}
 
+        public static function hasCache() : bool
+        {
+            return (self::$adapter !== null);
+        }
 	public static function flush()
 	{
-		if (static::$adapter)
-			static::$adapter->flush();
+		if (self::$adapter)
+			self::$adapter->flush();
 	}
 
 	/**
@@ -69,7 +72,7 @@ class Cache
 	 */
 	public static function get($key, $closure, $expire=null)
 	{
-		if (!static::$adapter)
+		if (!self::$adapter)
 			return $closure();
 
 		if (is_null($expire))
@@ -77,7 +80,7 @@ class Cache
 			$expire = static::$options['expire'];
 		}
 
-		$key = static::get_namespace() . $key;
+		$key = self::get_namespace() . $key;
 
 		if (!($value = static::$adapter->read($key)))
 			static::$adapter->write($key, ($value = $closure()), $expire);
@@ -95,7 +98,7 @@ class Cache
 			$expire = static::$options['expire'];
 		}
 
-		$key = static::get_namespace() . $key;
+		$key = self::get_namespace() . $key;
 		return static::$adapter->write($key, $var, $expire);
 	}
 
@@ -104,12 +107,13 @@ class Cache
 		if (!static::$adapter)
 			return;
 
-		$key = static::get_namespace() . $key;
+		$key = self::get_namespace() . $key;
 		return static::$adapter->delete($key);
 	}
 
-	private static function get_namespace()
+	private static function get_namespace() : string
 	{
-		return (isset(static::$options['namespace']) && strlen(static::$options['namespace']) > 0) ? (static::$options['namespace'] . "::") : "";
+            return self::$options['namespace'] ?? "";
+		
 	}
 }

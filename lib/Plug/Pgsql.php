@@ -2,14 +2,16 @@
 /**
  * @package ActiveRecord
  */
-namespace ActiveRecord;
+namespace ActiveRecord\Plug;
+use ActiveRecord\{ Connection, Column, Inflector };
+
 
 /**
  * Adapter for Postgres (not completed yet)
  * 
  * @package ActiveRecord
  */
-class PgsqlAdapter extends Connection
+class Pgsql extends Connection
 {
 	static $QUOTE_CHARACTER = '"';
 	static $DEFAULT_PORT = 5432;

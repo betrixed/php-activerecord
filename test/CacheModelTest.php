@@ -1,5 +1,5 @@
 <?php
-use ActiveRecord\Cache;
+use ActiveRecord\DataCache;
 
 class CacheModelTest extends DatabaseTest
 {
@@ -24,8 +24,8 @@ class CacheModelTest extends DatabaseTest
 
 	public function tear_down()
 	{
-		Cache::flush();
-		Cache::initialize(null);
+		DataCache::flush();
+		DataCache::initialize(null);
 	}
 
 	public function test_default_expire()
@@ -51,7 +51,7 @@ class CacheModelTest extends DatabaseTest
 		$publisher = Publisher::find(1);
 		$method = $this->set_method_public('Publisher', 'cache_key');
 		$cache_key = $method->invokeArgs($publisher, array());
-		$from_cache = Cache::$adapter->read($cache_key);
+		$from_cache = DataCache::$adapter->read($cache_key);
 
 		$this->assertEquals($publisher->name, $from_cache->name);
 	}
@@ -68,7 +68,7 @@ class CacheModelTest extends DatabaseTest
 
 		// Model is cached on first find
 		$actual = Publisher::find($publisher->id);
-		$from_cache = Cache::$adapter->read($cache_key);
+		$from_cache = DataCache::$adapter->read($cache_key);
 
 		$this->assertEquals($actual, $from_cache);
 	}
@@ -81,7 +81,7 @@ class CacheModelTest extends DatabaseTest
 		foreach($publishers as $publisher)
 		{
 			$cache_key = $method->invokeArgs($publisher, array());
-			$from_cache = Cache::$adapter->read($cache_key);
+			$from_cache = DataCache::$adapter->read($cache_key);
 
 			$this->assertEquals($publisher->name, $from_cache->name);
 		}
@@ -92,7 +92,7 @@ class CacheModelTest extends DatabaseTest
 		$method = $this->set_method_public('Author', 'cache_key');
 		$author = Author::first();
 		$cache_key = $method->invokeArgs($author, array());
-		$this->assertFalse(Cache::$adapter->read($cache_key));
+		$this->assertFalse(DataCache::$adapter->read($cache_key));
 	}
 
 	public function test_model_delete_from_cache()
@@ -104,7 +104,7 @@ class CacheModelTest extends DatabaseTest
 		$publisher->delete();
 
 		// at this point, the cached record should be gone
-		$this->assertFalse(Cache::$adapter->read($cache_key));
+		$this->assertFalse(DataCache::$adapter->read($cache_key));
 
 	}
 
@@ -115,7 +115,7 @@ class CacheModelTest extends DatabaseTest
 		$cache_key = $method->invokeArgs($publisher, array());
 		$this->assertEquals('Random House', $publisher->name);
 
-		$from_cache = Cache::$adapter->read($cache_key);
+		$from_cache = DataCache::$adapter->read($cache_key);
 		$this->assertEquals('Random House', $from_cache->name);
 
 		// make sure that updates make it to cache
@@ -123,7 +123,7 @@ class CacheModelTest extends DatabaseTest
 		$publisher->save();
 
 		$actual = Publisher::find($publisher->id);
-		$from_cache = Cache::$adapter->read($cache_key);
+		$from_cache = DataCache::$adapter->read($cache_key);
 
 		$this->assertEquals('Puppy Publishing', $from_cache->name);
 	}
@@ -142,7 +142,7 @@ class CacheModelTest extends DatabaseTest
 
 		$this->assertEquals('Specific House', $publisher->name);
 
-		$from_cache = Cache::$adapter->read($cache_key);
+		$from_cache = DataCache::$adapter->read($cache_key);
 
 		$this->assertEquals('Specific House', $from_cache->name);
 	}

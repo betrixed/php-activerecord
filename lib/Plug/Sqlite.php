@@ -2,7 +2,9 @@
 /**
  * @package ActiveRecord
  */
-namespace ActiveRecord;
+namespace ActiveRecord\Plug;
+use ActiveRecord\{ Connection, Column, Inflector };
+
 
 use PDO;
 
@@ -11,7 +13,7 @@ use PDO;
  *
  * @package ActiveRecord
  */
-class SqliteAdapter extends Connection
+class Sqlite extends Connection
 {
 
 	static $datetime_format = 'Y-m-d H:i:s';

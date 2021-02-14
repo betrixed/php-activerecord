@@ -2,16 +2,18 @@
 /**
  * @package ActiveRecord
  */
-namespace ActiveRecord;
+namespace ActiveRecord\Plug;
+use ActiveRecord\{ Connection, Column, Inflector };
 
 /**
  * Adapter for MySQL.
  *
  * @package ActiveRecord
  */
-use stdClass;
 
-class MysqlAdapter extends Connection
+use PDO;
+
+class Mysql extends Connection
 {
 	static $DEFAULT_PORT = 3306;
 
@@ -30,7 +32,7 @@ class MysqlAdapter extends Connection
 
 	public function query_for_tables()  : array
 	{
-		return $this->fetchAllRows($this->query('SHOW TABLES'), \PDO::FETCH_COLUMN);
+		return $this->fetchAllRows($this->query('SHOW TABLES'), PDO::FETCH_COLUMN);
 	}
 
 	public function create_column(&$column)
@@ -99,8 +101,8 @@ class MysqlAdapter extends Connection
 	}
         
         public function after_connect() {
-            $this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            $this->connection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
-            $this->connection->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            $this->connection->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
         }
 }

@@ -2,7 +2,9 @@
 /**
  * @package ActiveRecord
  */
-namespace ActiveRecord;
+namespace ActiveRecord\Plug;
+use ActiveRecord\{ Connection, Column, Inflector };
+
 
 use PDO;
 
@@ -11,7 +13,7 @@ use PDO;
  * 
  * @package ActiveRecord
  */
-class OciAdapter extends Connection
+class Oci extends Connection
 {
 	static $QUOTE_CHARACTER = '';
 	static $DEFAULT_PORT = 1521;

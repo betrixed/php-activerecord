@@ -1,5 +1,5 @@
 <?php
-use ActiveRecord\Cache;
+use ActiveRecord\DataCache;
 
 class ActiveRecordCacheTest extends DatabaseTest
 {
@@ -12,24 +12,44 @@ class ActiveRecordCacheTest extends DatabaseTest
 		}
 		
 		parent::set_up($connection_name);
-		ActiveRecord\Config::instance()->set_cache('memcached://localhost');
+		ActiveRecord\Config::instance()->set_cache('Memcached',['host'=>'localhost']);
 	}
 
 	public function tear_down()
 	{
-		Cache::flush();
-		Cache::initialize(null);
+            if (DataCache::hasCache()) {
+                DataCache::flush();
+                DataCache::initialize(null);
+            }
+            $this->assert_equals(DataCache::hasCache(), false);
 	}
 
+        public function test_acpu_setup() {
+                if (!extension_loaded('apcu'))
+		{
+			$this->markTestSkipped('The APCu extension is not available');
+			return;
+		}
+                ActiveRecord\Config::instance()->set_cache('Apcu',[]);
+        }
+        
+        public function test_acpu_down() {
+            if (DataCache::hasCache()) {
+                DataCache::flush();
+                DataCache::initialize(null);
+            }
+            $this->assert_equals(DataCache::hasCache(), false);
+        }
+        
 	public function test_default_expire()
 	{
-		$this->assert_equals(30,Cache::$options['expire']);
+		$this->assert_equals(30,DataCache::$options['expire']);
 	}
 
 	public function test_explicit_default_expire()
 	{
-		ActiveRecord\Config::instance()->set_cache('memcached://localhost',array('expire' => 1));
-		$this->assert_equals(1,Cache::$options['expire']);
+		ActiveRecord\Config::instance()->set_cache('Memcached', array('expire' => 1));
+		$this->assert_equals(1,DataCache::$options['expire']);
 	}
 
 	public function test_caches_column_meta_data()
@@ -37,7 +57,7 @@ class ActiveRecordCacheTest extends DatabaseTest
 		Author::first();
 
 		$table_name = Author::table()->get_fully_qualified_table_name(!($this->conn instanceof ActiveRecord\PgsqlAdapter));
-		$value = Cache::$adapter->read("get_meta_data-$table_name");
+		$value = DataCache::$adapter->read("get_meta_data-$table_name");
 		$this->assert_true(is_array($value));
 	}
 }

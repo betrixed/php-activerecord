@@ -906,7 +906,7 @@ class Model
 		$table = static::table();
 		if($table->cache_individual_model)
 		{
-			Cache::delete($this->cache_key());
+			DataCache::delete($this->cache_key());
 		}
 	}
 
@@ -1696,7 +1696,7 @@ class Model
 		foreach($pks as $pk)
 		{
 			$options['conditions'] = static::pk_conditions($pk);
-			$models[] = Cache::get($table->cache_key_for_model($pk), function() use ($table, $options)
+			$models[] = DataCache::get($table->cache_key_for_model($pk), function() use ($table, $options)
 			{
 				$res = $table->find($options);
 				return $res ? $res[0] : null;

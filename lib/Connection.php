@@ -187,14 +187,13 @@ abstract class Connection {
      * @return string The full name of the class including namespace.
      */
     private static function load_adapter_class($adapter) {
-        $class = ucwords($adapter) . 'Adapter';
-        $fqclass = 'ActiveRecord\\' . $class;
-        $source = __DIR__ . "/adapters/$class.php";
-
-        if (!file_exists($source))
-            throw new DatabaseException("$fqclass not found!");
-
-        require_once($source);
+        $class = ucwords($adapter);
+        $fqclass = 'ActiveRecord\\Plug\\' . $class;
+        $file = __DIR__ . "/Plug/" . $class . ".php";
+        if (!file_exists($file)) {
+            throw new DatabaseException("Plug adapter not found: " . $class);
+        }
+        require_once($file);
         return $fqclass;
     }
 

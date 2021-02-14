@@ -241,7 +241,7 @@ class Table {
             };
             if ($this->cache_individual_model) {
                 $key = $this->cache_key_for_model(array_intersect_key($row, array_flip($this->pk)));
-                $model = Cache::get($key, $cb, $this->cache_model_expire);
+                $model = DataCache::get($key, $cb, $this->cache_model_expire);
             } else {
                 $model = $cb();
             }
@@ -385,7 +385,7 @@ class Table {
 
         $table_name = $this->get_fully_qualified_table_name($quote_name);
         $conn = $this->conn;
-        $this->columns = Cache::get("get_meta_data-$table_name", function() use ($conn, $table_name) {
+        $this->columns = DataCache::get("get_meta_data-$table_name", function() use ($conn, $table_name) {
                     return $conn->columns($table_name);
                 });
     }
@@ -456,7 +456,7 @@ class Table {
     }
 
     private function set_cache() {
-        if (!Cache::$adapter)
+        if (!DataCache::$adapter)
             return;
 
         $model_class_name = $this->class->name;
@@ -464,7 +464,7 @@ class Table {
         if (property_exists($model_class_name, 'cache_expire') && isset($model_class_name::$cache_expire)) {
             $this->cache_model_expire = $model_class_name::$cache_expire;
         } else {
-            $this->cache_model_expire = Cache::$options['expire'];
+            $this->cache_model_expire = DataCache::$options['expire'];
         }
     }
 
