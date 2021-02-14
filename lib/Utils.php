@@ -173,7 +173,14 @@ class Utils
 		return is_array(end($options)) ? end($options) : array();
 	}
 
-	public static function add_condition(&$conditions=array(), $condition, $conjuction='AND')
+        /**
+         * TODO: array $conditions is both a reference and a return value
+         * @param array $conditions
+         * @param type $condition
+         * @param type $conjuction
+         * @return array
+         */
+	public static function add_condition(array &$conditions, $condition, $conjuction='AND') : array
 	{
 		if (is_array($condition))
 		{
@@ -200,7 +207,7 @@ class Utils
 		return ucfirst(str_replace('_', ' ', $normal));
 	}
 
-	public static function is_odd($number)
+	public static function is_odd(int $number) : int
 	{
 		return $number & 1;
 	}
