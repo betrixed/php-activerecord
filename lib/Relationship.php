@@ -122,15 +122,17 @@ abstract class AbstractRelationship implements InterfaceRelationship
 	 * @param $models array of model objects
 	 * @param $attributes array of attributes from $models
 	 * @param $includes array of eager load directives
-	 * @param $query_keys -> key(s) to be queried for on included/related table
-	 * @param $model_values_keys -> key(s)/value(s) to be used in query from model which is including
+	 * @param $query_keys -> Non empty key(s) to be queried for on included/related table
+	 * @param $model_values_keys -> Non empty key(s)/value(s) to be used in query from model which is including
 	 * @return void
 	 */
-	protected function query_and_attach_related_models_eagerly(Table $table, $models, $attributes, $includes=array(), $query_keys=array(), $model_values_keys=array())
+	protected function query_and_attach_related_models_eagerly(Table $table, array $models, array $attributes, 
+                array $query_keys, array $model_values_keys, ?array $includes = null)
 	{
 		$values = array();
 		$options = $this->options;
 		$inflector = Inflector::instance();
+                
 		$query_key = $query_keys[0];
 		$model_values_key = $model_values_keys[0];
 
@@ -601,10 +603,10 @@ class HasMany extends AbstractRelationship
 		return $record;
 	}
 
-	public function load_eagerly($models=array(), $attributes=array(), $includes, Table $table)
+	public function load_eagerly(Table $table, array $models, array $attributes, ?array $includes = null)
 	{
 		$this->set_keys($table->class->name);
-		$this->query_and_attach_related_models_eagerly($table,$models,$attributes,$includes,$this->foreign_key, $table->pk);
+		$this->query_and_attach_related_models_eagerly($table,$models,$attributes,$this->foreign_key, $table->pk,$includes);
 	}
 }
 
@@ -723,8 +725,8 @@ class BelongsTo extends AbstractRelationship
 		return $class::first($options);
 	}
 
-	public function load_eagerly($models=array(), $attributes, $includes, Table $table)
+	public function load_eagerly(Table $table, array $models, array $attributes, ?array $includes=null)
 	{
-		$this->query_and_attach_related_models_eagerly($table,$models,$attributes,$includes, $this->primary_key,$this->foreign_key);
+		$this->query_and_attach_related_models_eagerly($table,$models,$attributes,$this->primary_key,$this->foreign_key,$includes);
 	}
 }
