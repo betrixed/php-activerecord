@@ -113,7 +113,8 @@ class DataCache
 
 	private static function get_namespace() : string
 	{
-            return self::$options['namespace'] ?? "";
-		
+            $ns = self::$options['namespace'] ?? "";
+            $ns .= "/";
+            return $ns;
 	}
 }

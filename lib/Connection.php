@@ -88,7 +88,7 @@ abstract class Connection {
      * @var array
      */
     static $PDO_OPTIONS = array(
-        PDO::ATTR_CASE => PDO::CASE_LOWER,
+        PDO::ATTR_CASE => PDO::CASE_NATURAL,
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
         PDO::ATTR_STRINGIFY_FETCHES => false);
@@ -329,7 +329,23 @@ abstract class Connection {
     public function getType(): string {
         return $this->protocol;
     }
-
+    /**
+     * For changing on the fly 
+     * - Mysql returns metadata field names in mixed case.
+     * PDO::CASE_LOWER or PDO:CASE_NATURAL
+     * @param int $value
+     */
+    public function setCaseAttribute(int $value) {
+        $this->connection->setAttribute(PDO::ATTR_CASE, $value);
+    }
+    /** 
+     * PDO::CASE_LOWER,  PDO::CASE_UPPER, PDO:CASE_NATURAL;
+     * return current setting
+     * 
+     */
+    public function getCaseAttribute() : int {
+        return $this->connection->getAttribute(PDO::ATTR_CASE);
+    }
     /**
      * Escapes quotes in a string.
      *
