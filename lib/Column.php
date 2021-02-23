@@ -1,4 +1,4 @@
-git sta<?php
+<?php
 /**
  * @package ActiveRecord
  */
